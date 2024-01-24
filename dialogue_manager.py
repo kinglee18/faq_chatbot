@@ -1,70 +1,40 @@
-import numpy as np 
-import pandas as pd
+import numpy as np
 import pickle
-import tensorflow as tf
 import tensorflow_hub as hub
 from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
 from sklearn.metrics.pairwise import cosine_similarity
+from chatterbot import languages
 
- 
-'''dataset preparation
-import numpy as np
-import nltk
-import re
-import pandas as pd
-import pickle
-import tensorflow as tf
-import tensorflow_hub as hub
 
-module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-model = hub.load(module_url)
-def embed(input):
-  return np.array(model([input]))
-dataset['Question_Vector'] = dataset.Question.map(embed)
-pickle.dump(dataset, open('dataset.pkl', 'wb'))
-'''   
-        
 class DialogueManager(object):
-    def __init__(self):
- 
-        #self.model = tf.saved_model.load("../data/tmp/mobilenet/1/")
-        self.model = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-        self.dataset = pickle.load(open('dataset.pkl', mode='rb'))
-         
-        self.QUESTION_VECTORS =  self.dataset.Question_Vector 
+    def __init__(self, use_model_url, dataset_path):
+        self.model = hub.load(use_model_url)
+        self.dataset = pickle.load(open(dataset_path, mode='rb'))
+        self.QUESTION_VECTORS = self.dataset.Question_Vector
         self.COSINE_THRESHOLD = 0.5
-        
-        self.chitchat_bot = ChatBot("Chatterbot")       
+        self.lng = languages.ENG
+        self.lng.ISO_639_1 = 'en_core_web_sm'
+        self.chitchat_bot = ChatBot("Chatterbot", tagger_language=self.lng)
         trainer = ChatterBotCorpusTrainer(self.chitchat_bot)
         trainer.train("chatterbot.corpus.english")
- 
-         
-        
-    def embed(self,input):
-        return np.array(self.model([input]))         
-    
-        
-        
+
+    def embed(self, input):
+        return np.array(self.model([input]))
+
     def semantic_search(self, query):
-        """Returns max_cos_ind and cosine similairty value
         query_vec = self.embed(query)
-        sims = []
-        for que_vec  in self.QUESTION_VECTORS:            
-            sim =  cosine_similarity(query_vec, query_vec)
-            sims.append(sim)
-        max_ind = sims.index(max(sims))
-        return max_ind,sims[max_ind][0][0]      
-            
-    
+        sims = [cosine_similarity(query_vec, que_vec)[0][0] for que_vec in self.QUESTION_VECTORS]
+        most_similar_index = np.argmax(sims)
+        most_relevant_sim_score = sims[most_similar_index]
+        return most_similar_index, most_relevant_sim_score
+
     def generate_answer(self, question):
-        '''This will return list of all questions according to their similarity,but we'll pick topmost/most relevant question'''
-        ind, most_relevant_sim_score = self.semantic_search(question)
-         
-        if most_relevant_sim_score >= self.COSINE_THRESHOLD:
-            answer = self.dataset.Answer[ind]
+        index, similarity_score = self.semantic_search(question)
+
+        if similarity_score >= self.COSINE_THRESHOLD:
+            answer = self.dataset.Answer[index]
         else:
             answer = self.chitchat_bot.get_response(question)
+
         return answer
-      
-         

@@ -12,7 +12,10 @@ RUN pip3 install -r requirements.txt
 RUN python3 -m spacy download en_core_web_sm
 
 # Expone el puerto que utilizará la aplicación
+EXPOSE 8080
 EXPOSE 5000
+ENV PORT 8080
+ENV HOST 0.0.0.0
 
 # Comando para ejecutar la aplicación
 CMD ["python3", "main.py"]

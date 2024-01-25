@@ -3,5 +3,7 @@ pandas
 flask
 tensorflow
 tensorflow-hub
-chatterbot
+chatterbot==1.0.0
 chatterbot-corpus
+spacy
+scikit-learn

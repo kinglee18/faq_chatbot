@@ -4,9 +4,8 @@ from dialogue_manager import *
  
     
 app = Flask(__name__)
-use_model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-dataset_path = 'dataset.pkl'
-dialogue_manager = DialogueManager(use_model_url, dataset_path)
+
+dialogue_manager = DialogueManager()
 
 @app.route("/")
 def home():
